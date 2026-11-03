@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+
+{% block title %}Predict Customer Churn{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Predict Customer Churn</h1>
+    <p class="page-subtitle">
+        Enter customer behavioral and contractual metrics below to evaluate churn risk using our trained Logistic Regression pipeline.
+    </p>
+</div>
+
+<!-- Display Prediction Result Card if Result Exists -->
+{% if result %}
+<div class="result-box {% if result.prediction_code == 1 %}result-churn{% else %}result-loyal{% endif %}" id="prediction-result-card">
+    <div class="result-header">
+        <div>
+            <div class="result-tag">
+                {% if result.prediction_code == 1 %}
+                    &#9888; Risk Assessment Alert
+                {% else %}
+                    &#10003; Customer Health Assessment
+                {% endif %}
+            </div>
+            <div class="result-title">
+                {{ result.prediction_label }}
+            </div>
+            <div style="font-size: 0.95rem; font-weight: 600; margin-top: 0.25rem;">
+                Status: {{ result.risk_level }}
+            </div>
+        </div>
+        <div style="text-align: right;">
+            {% if result.saved_id %}
+                <span class="stat-badge badge-ready" style="font-size: 0.85rem; padding: 0.4rem 0.8rem;">
+                    &#128190; Saved in MongoDB
+                </span>
+                <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.35rem;">
+                    Doc ID: <code>{{ result.saved_id }}</code>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Probability Breakdown Meter -->
+    <div class="result-meter-container">
+        <div class="meter-header">
+            <span>Churn Probability: <strong>{{ result.churn_probability }}%</strong></span>
+            <span>Retention / Loyal Probability: <strong>{{ result.loyal_probability }}%</strong></span>
+        </div>
+        <div class="progress-bar-bg">
+            {% if result.prediction_code == 1 %}
+                <div class="progress-bar-fill-churn" style="width: {{ result.churn_probability }}%;"></div>
+            {% else %}
+                <div class="progress-bar-fill-loyal" style="width: {{ result.loyal_probability }}%;"></div>
+            {% endif %}
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted); margin-top: 0.5rem;">
+            <span>0% (Completely Loyal)</span>
+            <span>50% (Decision Threshold)</span>
+            <span>100% (Certain Churn)</span>
+        </div>
+    </div>
+
+    <!-- Recommendations / Actionable Insight -->
+    <div style="background: rgba(255, 255, 255, 0.7); border-radius: var(--radius-sm); padding: 1rem; font-size: 0.92rem;">
+        {% if result.prediction_code == 1 %}
+            <strong style="color: #b91c1c;">Recommended Retention Strategy:</strong>
+            Customer exhibits indicators of dissatisfaction or inactivity (such as payment delays or short contract commitments).
+            Consider offering a proactive contract upgrade discount, personalized customer support check-in, or loyalty rewards.
+        {% else %}
+            <strong style="color: #047857;">Customer Loyalty Standing:</strong>
+            Customer demonstrates consistent engagement, favorable contract terms, and minimal payment delay.
+            Recommended action: Upsell premium features and maintain regular service satisfaction surveys.
+        {% endif %}
+    </div>
+
+    <div style="margin-top: 1.25rem;">
+        <a href="{{ url_for('predict_page') }}" class="btn btn-secondary btn-sm">
+            &#8634; Make Another Prediction
+        </a>
+        <a href="{{ url_for('history_page') }}" class="btn btn-primary btn-sm">
+            &#128065; View in Prediction History Table
+        </a>
+    </div>
+</div>
+{% endif %}
+
+<!-- Presets Toolbar for Quick Testing -->
+<div class="presets-bar">
+    <div class="presets-label">&#9889; Quick Test Sample Profiles:</div>
+    <div class="btn-group">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="loadPreset('loyal')">
+            &#10003; Fill Loyal Customer Sample
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="loadPreset('churn')">
+            &#9888; Fill High Churn Risk Sample
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="clearForm()">
+            Reset Defaults
+        </button>
+    </div>
+</div>
+
+<!-- Prediction Input Form -->
+<div class="card">
+    <h2 class="card-title">&#128221; Customer Profile Form</h2>
+    <p class="card-subtitle">
+        All fields correspond to the actual columns in the training dataset. Ensure values are accurate for realistic probability estimation.
+    </p>
+
+    <form action="{{ url_for('predict_page') }}" method="POST" id="churn-form">
+        <div class="form-grid">
+            
+            <!-- Section 1: Customer Demographics -->
+            <div class="form-section-title">&#128100; Demographics</div>
+
+            <div class="form-group">
+                <label for="Age" class="form-label">
+                    <span>Age</span>
+                    <span class="unit">18 - 100 years</span>
+                </label>
+                <input type="number" id="Age" name="Age" class="form-control"
+                       min="18" max="100" step="1" required
+                       value="{{ form_data.Age if form_data else 35 }}">
+                <span class="form-helper">Customer age in completed years</span>
+            </div>
+
+            <div class="form-group">
+                <label for="Gender" class="form-label">
+                    <span>Gender</span>
+                </label>
+                <select id="Gender" name="Gender" class="form-control" required>
+                    <option value="Female" {% if form_data and form_data.Gender == 'Female' %}selected{% endif %}>Female</option>
+                    <option value="Male" {% if form_data and form_data.Gender == 'Male' %}selected{% endif %}>Male</option>
+                </select>
+                <span class="form-helper">Customer biological gender</span>
+            </div>
+
+            <!-- Section 2: Account & Contract Terms -->
+            <div class="form-section-title">&#128197; Subscription & Contract Details</div>
+
+            <div class="form-group">
+                <label for="Tenure" class="form-label">
+                    <span>Tenure</span>
+                    <span class="unit">1 - 120 months</span>
+                </label>
+                <input type="number" id="Tenure" name="Tenure" class="form-control"
+                       min="1" max="120" step="1" required
+                       value="{{ form_data.Tenure if form_data else 24 }}">
+                <span class="form-helper">Months active with the service</span>
+            </div>
+
+            <div class="form-group">
+                <label for="Subscription Type" class="form-label">
+                    <span>Subscription Tier</span>
+                </label>
+                <select id="Subscription Type" name="Subscription Type" class="form-control" required>
+                    <option value="Basic" {% if form_data and form_data['Subscription Type'] == 'Basic' %}selected{% endif %}>Basic</option>
+                    <option value="Standard" {% if not form_data or form_data['Subscription Type'] == 'Standard' %}selected{% endif %}>Standard</option>
+                    <option value="Premium" {% if form_data and form_data['Subscription Type'] == 'Premium' %}selected{% endif %}>Premium</option>
+                </select>
+                <span class="form-helper">Customer plan package level</span>
+            </div>
+
+            <div class="form-group">
+                <label for="Contract Length" class="form-label">
+                    <span>Contract Length</span>
+                </label>
+                <select id="Contract Length" name="Contract Length" class="form-control" required>
+                    <option value="Monthly" {% if form_data and form_data['Contract Length'] == 'Monthly' %}selected{% endif %}>Monthly</option>
+                    <option value="Quarterly" {% if form_data and form_data['Contract Length'] == 'Quarterly' %}selected{% endif %}>Quarterly</option>
+                    <option value="Annual" {% if not form_data or form_data['Contract Length'] == 'Annual' %}selected{% endif %}>Annual</option>
+                </select>
+                <span class="form-helper">Billing contract agreement duration</span>
+            </div>
+
+            <div class="form-group">
+                <label for="Total Spend" class="form-label">
+                    <span>Total Spend</span>
+                    <span class="unit">$ USD</span>
+                </label>
+                <input type="number" id="Total Spend" name="Total Spend" class="form-control"
+                       min="10" max="5000" step="1" required
+                       value="{{ form_data['Total Spend'] if form_data else 650 }}">
+                <span class="form-helper">Cumulative billing spend to date</span>
+            </div>
+
+            <!-- Section 3: Usage, Engagement & Support -->
+            <div class="form-section-title">&#128202; Usage Activity & Service Health</div>
+
+            <div class="form-group">
+                <label for="Usage Frequency" class="form-label">
+                    <span>Usage Frequency</span>
+                    <span class="unit">times/month</span>
+                </label>
+                <input type="number" id="Usage Frequency" name="Usage Frequency" class="form-control"
+                       min="0" max="50" step="1" required
+                       value="{{ form_data['Usage Frequency'] if form_data else 15 }}">
+                <span class="form-helper">Monthly average service log-ins</span>
+            </div>
+
+            <div class="form-group">
+                <label for="Support Calls" class="form-label">
+                    <span>Support Calls</span>
+                    <span class="unit">inquiries</span>
+                </label>
+                <input type="number" id="Support Calls" name="Support Calls" class="form-control"
+                       min="0" max="30" step="1" required
+                       value="{{ form_data['Support Calls'] if form_data else 2 }}">
+                <span class="form-helper">Number of customer support contacts</span>
+            </div>
+
+            <div class="form-group">
+                <label for="Payment Delay" class="form-label">
+                    <span>Payment Delay</span>
+                    <span class="unit">days</span>
+                </label>
+                <input type="number" id="Payment Delay" name="Payment Delay" class="form-control"
+                       min="0" max="60" step="1" required
+                       value="{{ form_data['Payment Delay'] if form_data else 5 }}">
+                <span class="form-helper">Days payment overdue (0 = on-time)</span>
+            </div>
+
+            <div class="form-group">
+                <label for="Last Interaction" class="form-label">
+                    <span>Last Interaction</span>
+                    <span class="unit">days ago</span>
+                </label>
+                <input type="number" id="Last Interaction" name="Last Interaction" class="form-control"
+                       min="0" max="60" step="1" required
+                       value="{{ form_data['Last Interaction'] if form_data else 10 }}">
+                <span class="form-helper">Days since last active customer event</span>
+            </div>
+
+        </div>
+
+        <div style="display: flex; gap: 1rem; align-items: center; margin-top: 1rem;">
+            <button type="submit" class="btn btn-primary" id="btn-submit-prediction" style="padding: 0.85rem 2rem; font-size: 1.05rem;">
+                &#9654; Predict Churn Likelihood
+            </button>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">
+                Results will be computed instantly and saved in MongoDB <code>churn_predictions</code>.
+            </span>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Preset sample loader for demonstration convenience
+function loadPreset(type) {
+    if (type === 'loyal') {
+        // High tenure, low support calls, zero payment delay, annual contract, premium/standard
+        document.getElementById('Age').value = 45;
+        document.getElementById('Gender').value = 'Female';
+        document.getElementById('Tenure').value = 48;
+        document.getElementById('Usage Frequency').value = 24;
+        document.getElementById('Support Calls').value = 1;
+        document.getElementById('Payment Delay').value = 0;
+        document.getElementById('Subscription Type').value = 'Premium';
+        document.getElementById('Contract Length').value = 'Annual';
+        document.getElementById('Total Spend').value = 920;
+        document.getElementById('Last Interaction').value = 4;
+    } else if (type === 'churn') {
+        // Low tenure, monthly contract, many support calls, long payment delay, high last interaction
+        document.getElementById('Age').value = 23;
+        document.getElementById('Gender').value = 'Male';
+        document.getElementById('Tenure').value = 4;
+        document.getElementById('Usage Frequency').value = 5;
+        document.getElementById('Support Calls').value = 8;
+        document.getElementById('Payment Delay').value = 26;
+        document.getElementById('Subscription Type').value = 'Basic';
+        document.getElementById('Contract Length').value = 'Monthly';
+        document.getElementById('Total Spend').value = 180;
+        document.getElementById('Last Interaction').value = 28;
+    }
+}
+
+function clearForm() {
+    document.getElementById('Age').value = 35;
+    document.getElementById('Gender').value = 'Female';
+    document.getElementById('Tenure').value = 24;
+    document.getElementById('Usage Frequency').value = 15;
+    document.getElementById('Support Calls').value = 2;
+    document.getElementById('Payment Delay').value = 5;
+    document.getElementById('Subscription Type').value = 'Standard';
+    document.getElementById('Contract Length').value = 'Annual';
+    document.getElementById('Total Spend').value = 650;
+    document.getElementById('Last Interaction').value = 10;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,146 @@
+{
+    "model_name": "Logistic Regression with Scikit-learn Pipeline",
+    "algorithm": "Logistic Regression (L-BFGS, Balanced Class Weights)",
+    "training_timestamp": "2026-10-10 17:23:28",
+    "training_collection": "customers_train_split",
+    "testing_collection": "customers_test_split",
+    "training_samples": 308582,
+    "validation_samples": 132250,
+    "test_samples": 132250,
+    "features": {
+        "numerical": [
+            "Age",
+            "Tenure",
+            "Usage Frequency",
+            "Support Calls",
+            "Payment Delay",
+            "Total Spend",
+            "Last Interaction"
+        ],
+        "categorical": [
+            "Gender",
+            "Subscription Type",
+            "Contract Length"
+        ]
+    },
+    "validation_metrics": {
+        "accuracy": 0.8951,
+        "precision": 0.9399,
+        "recall": 0.8706,
+        "f1_score": 0.9039,
+        "roc_auc": 0.9596,
+        "confusion_matrix": [
+            [
+                53078,
+                4172
+            ],
+            [
+                9706,
+                65294
+            ]
+        ],
+        "tn": 53078,
+        "fp": 4172,
+        "fn": 9706,
+        "tp": 65294
+    },
+    "test_metrics": {
+        "accuracy": 0.8951,
+        "precision": 0.9399,
+        "recall": 0.8706,
+        "f1_score": 0.9039,
+        "roc_auc": 0.9596,
+        "confusion_matrix": [
+            [
+                53078,
+                4172
+            ],
+            [
+                9706,
+                65294
+            ]
+        ],
+        "tn": 53078,
+        "fp": 4172,
+        "fn": 9706,
+        "tp": 65294
+    },
+    "train_metrics": {
+        "accuracy": 0.8966,
+        "precision": 0.9416,
+        "recall": 0.8717,
+        "f1_score": 0.9053,
+        "roc_auc": 0.9595,
+        "confusion_matrix": [
+            [
+                124118,
+                9465
+            ],
+            [
+                22449,
+                152550
+            ]
+        ],
+        "tn": 124118,
+        "fp": 9465,
+        "fn": 22449,
+        "tp": 152550
+    },
+    "has_test_labels": true,
+    "training_time_seconds": 2.87,
+    "evaluation_time_seconds": 1.08,
+    "classification_report_validation": {
+        "0": {
+            "precision": 0.8454064729867482,
+            "recall": 0.9271266375545851,
+            "f1-score": 0.8843827582185048,
+            "support": 57250.0
+        },
+        "1": {
+            "precision": 0.939941842052227,
+            "recall": 0.8705866666666666,
+            "f1-score": 0.9039358741849294,
+            "support": 75000.0
+        },
+        "accuracy": 0.8950623818525519,
+        "macro avg": {
+            "precision": 0.8926741575194876,
+            "recall": 0.8988566521106258,
+            "f1-score": 0.8941593162017171,
+            "support": 132250.0
+        },
+        "weighted avg": {
+            "precision": 0.8990182134775679,
+            "recall": 0.8950623818525519,
+            "f1-score": 0.8954714818289535,
+            "support": 132250.0
+        }
+    },
+    "classification_report_test": {
+        "0": {
+            "precision": 0.8454064729867482,
+            "recall": 0.9271266375545851,
+            "f1-score": 0.8843827582185048,
+            "support": 57250.0
+        },
+        "1": {
+            "precision": 0.939941842052227,
+            "recall": 0.8705866666666666,
+            "f1-score": 0.9039358741849294,
+            "support": 75000.0
+        },
+        "accuracy": 0.8950623818525519,
+        "macro avg": {
+            "precision": 0.8926741575194876,
+            "recall": 0.8988566521106258,
+            "f1-score": 0.8941593162017171,
+            "support": 132250.0
+        },
+        "weighted avg": {
+            "precision": 0.8990182134775679,
+            "recall": 0.8950623818525519,
+            "f1-score": 0.8954714818289535,
+            "support": 132250.0
+        }
+    }
+}

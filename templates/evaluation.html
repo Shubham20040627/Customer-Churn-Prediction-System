@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Model Evaluation{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Machine Learning Model Evaluation</h1>
+    <p class="page-subtitle">
+        Performance evaluation of our Scikit-learn Logistic Regression Pipeline calculated using real records from <code>customerChurnDB</code>.
+    </p>
+</div>
+
+{% if not evaluation.available %}
+<div class="card empty-state">
+    <div class="empty-icon">&#9888;</div>
+    <h2 class="empty-title">Model Has Not Been Trained Yet</h2>
+    <p class="empty-desc">
+        {{ evaluation.message }}
+        <br><br>
+        Run the following command in your terminal to train the model and compute real metrics:
+        <br>
+        <code style="background: var(--bg-page); padding: 0.4rem 0.8rem; border-radius: 6px; border: 1px solid var(--border); display: inline-block; margin-top: 0.5rem; font-weight: 600;">
+            python src/train_model.py
+        </code>
+    </p>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">
+        &larr; Back to Dashboard
+    </a>
+</div>
+{% else %}
+
+{% set metrics = evaluation.metrics %}
+{% set val_m = metrics.validation_metrics %}
+{% set test_m = metrics.test_metrics %}
+
+<!-- Summary Info Card -->
+<div class="card" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #ffffff; border: none; margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="font-size: 0.8rem; text-transform: uppercase; color: #38bdf8; font-weight: 700; letter-spacing: 0.05em;">
+                Classifier Specification
+            </div>
+            <h2 style="font-size: 1.5rem; font-weight: 700; margin: 0.25rem 0;">{{ metrics.model_name }}</h2>
+            <div style="font-size: 0.9rem; color: #cbd5e1;">
+                Trained on <strong>{{ "{:,}".format(metrics.training_samples) }}</strong> samples &bull; Evaluated on <strong>{{ "{:,}".format(metrics.validation_samples) }}</strong> validation samples &bull; Training Time: {{ metrics.training_time_seconds }}s
+            </div>
+        </div>
+        <div>
+            <span class="stat-badge badge-ready" style="font-size: 0.85rem; padding: 0.4rem 0.8rem;">
+                &#10003; Evaluated at {{ metrics.training_timestamp }}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Evaluation Metric Cards (Validation Split) -->
+<h2 style="font-size: 1.3rem; font-weight: 700; color: var(--navy-dark); margin-bottom: 1rem;">
+    Validation Split Metrics (80/20 Stratified Holdout)
+</h2>
+
+<div class="stats-grid">
+    <!-- Accuracy -->
+    <div class="stat-card">
+        <div class="stat-header">
+            <span class="stat-label">Accuracy</span>
+            <span class="stat-badge badge-ready">Overall</span>
+        </div>
+        <div class="stat-value" style="color: #2563eb;">
+            {{ (val_m.accuracy * 100) | round(2) }}%
+        </div>
+        <div class="stat-desc">Ratio of total correct predictions ({{ val_m.accuracy }})</div>
+    </div>
+
+    <!-- Precision -->
+    <div class="stat-card">
+        <div class="stat-header">
+            <span class="stat-label">Precision</span>
+            <span class="stat-badge" style="background: #e0f2fe; color: #0284c7;">Positive Value</span>
+        </div>
+        <div class="stat-value" style="color: #0284c7;">
+            {{ (val_m.precision * 100) | round(2) }}%
+        </div>
+        <div class="stat-desc">Accuracy of churn alarms ({{ val_m.precision }})</div>
+    </div>
+
+    <!-- Recall -->
+    <div class="stat-card">
+        <div class="stat-header">
+            <span class="stat-label">Recall</span>
+            <span class="stat-badge" style="background: #fef3c7; color: #d97706;">Sensitivity</span>
+        </div>
+        <div class="stat-value" style="color: #d97706;">
+            {{ (val_m.recall * 100) | round(2) }}%
+        </div>
+        <div class="stat-desc">Actual churners captured ({{ val_m.recall }})</div>
+    </div>
+
+    <!-- F1-Score -->
+    <div class="stat-card">
+        <div class="stat-header">
+            <span class="stat-label">F1-Score</span>
+            <span class="stat-badge badge-ready">Harmonic Mean</span>
+        </div>
+        <div class="stat-value" style="color: #10b981;">
+            {{ (val_m.f1_score * 100) | round(2) }}%
+        </div>
+        <div class="stat-desc">Harmonic balance of Prec. & Recall ({{ val_m.f1_score }})</div>
+    </div>
+
+    <!-- ROC-AUC -->
+    <div class="stat-card">
+        <div class="stat-header">
+            <span class="stat-label">ROC-AUC</span>
+            <span class="stat-badge" style="background: #ede9fe; color: #7c3aed;">Discrimination</span>
+        </div>
+        <div class="stat-value" style="color: #7c3aed;">
+            {{ val_m.roc_auc }}
+        </div>
+        <div class="stat-desc">Separation ability across thresholds</div>
+    </div>
+</div>
+
+<!-- Confusion Matrix Section -->
+<div class="card">
+    <h2 class="card-title">&#128300; Confusion Matrix (Validation Split)</h2>
+    <p class="card-subtitle">
+        Breakdown of model predictions versus actual ground truth for {{ "{:,}".format(metrics.validation_samples) }} validation records.
+    </p>
+
+    <div class="cm-container">
+        <!-- Top Left Corner -->
+        <div></div>
+        <!-- Column Headers -->
+        <div class="cm-header">Predicted Loyal (0)</div>
+        <div class="cm-header">Predicted Churn (1)</div>
+
+        <!-- Row 1: Actual Loyal (0) -->
+        <div class="cm-header" style="text-align: right; justify-content: flex-end; padding-right: 0.75rem;">
+            Actual Loyal (0)
+        </div>
+        <div class="cm-cell cm-tn">
+            <span class="cm-val" style="color: #047857;">{{ "{:,}".format(val_m.tn) }}</span>
+            <span class="cm-label">True Negative (TN)</span>
+            <small style="color: #065f46; font-size: 0.75rem; margin-top: 0.2rem;">Correctly identified loyal</small>
+        </div>
+        <div class="cm-cell cm-fp">
+            <span class="cm-val" style="color: #b91c1c;">{{ "{:,}".format(val_m.fp) }}</span>
+            <span class="cm-label">False Positive (FP)</span>
+            <small style="color: #991b1b; font-size: 0.75rem; margin-top: 0.2rem;">Loyal wrongly flagged as churn</small>
+        </div>
+
+        <!-- Row 2: Actual Churn (1) -->
+        <div class="cm-header" style="text-align: right; justify-content: flex-end; padding-right: 0.75rem;">
+            Actual Churn (1)
+        </div>
+        <div class="cm-cell cm-fn">
+            <span class="cm-val" style="color: #b91c1c;">{{ "{:,}".format(val_m.fn) }}</span>
+            <span class="cm-label">False Negative (FN)</span>
+            <small style="color: #991b1b; font-size: 0.75rem; margin-top: 0.2rem;">Churner missed by model</small>
+        </div>
+        <div class="cm-cell cm-tp">
+            <span class="cm-val" style="color: #047857;">{{ "{:,}".format(val_m.tp) }}</span>
+            <span class="cm-label">True Positive (TP)</span>
+            <small style="color: #065f46; font-size: 0.75rem; margin-top: 0.2rem;">Correctly caught churner</small>
+        </div>
+    </div>
+</div>
+
+<!-- Comparison with Independent Test Collection if Available -->
+{% if test_m %}
+<div class="card">
+    <h2 class="card-title">&#128202; Independent MongoDB Test Collection Evaluation</h2>
+    <p class="card-subtitle">
+        Performance evaluated against <strong>{{ "{:,}".format(metrics.test_samples) }}</strong> records from collection <code>customers_test</code>.
+    </p>
+
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Validation Split (Train Data)</th>
+                    <th>Independent Test Collection (customers_test)</th>
+                    <th>Variance / Stability</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Accuracy</strong></td>
+                    <td>{{ (val_m.accuracy * 100) | round(2) }}%</td>
+                    <td>{{ (test_m.accuracy * 100) | round(2) }}%</td>
+                    <td><span class="stat-badge badge-ready">&#10003; Consistent</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Precision</strong></td>
+                    <td>{{ (val_m.precision * 100) | round(2) }}%</td>
+                    <td>{{ (test_m.precision * 100) | round(2) }}%</td>
+                    <td><span class="stat-badge badge-ready">&#10003; Consistent</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Recall</strong></td>
+                    <td>{{ (val_m.recall * 100) | round(2) }}%</td>
+                    <td>{{ (test_m.recall * 100) | round(2) }}%</td>
+                    <td><span class="stat-badge badge-ready">&#10003; Consistent</span></td>
+                </tr>
+                <tr>
+                    <td><strong>F1-Score</strong></td>
+                    <td>{{ (val_m.f1_score * 100) | round(2) }}%</td>
+                    <td>{{ (test_m.f1_score * 100) | round(2) }}%</td>
+                    <td><span class="stat-badge badge-ready">&#10003; Consistent</span></td>
+                </tr>
+                <tr>
+                    <td><strong>ROC-AUC</strong></td>
+                    <td>{{ val_m.roc_auc }}</td>
+                    <td>{{ test_m.roc_auc }}</td>
+                    <td><span class="stat-badge badge-ready">&#10003; High Discrimination</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

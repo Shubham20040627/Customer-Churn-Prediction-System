@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Prediction History{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1 class="page-title">Prediction History</h1>
+        <p class="page-subtitle">
+            Records stored in MongoDB collection <code>churn_predictions</code>, captured in real-time from web form submissions.
+        </p>
+    </div>
+    <div>
+        <a href="{{ url_for('predict_page') }}" class="btn btn-primary btn-sm">
+            + New Prediction
+        </a>
+    </div>
+</div>
+
+{% if predictions and predictions|length > 0 %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <span style="font-weight: 600; font-size: 0.95rem; color: var(--navy-dark);">
+            Showing latest <strong>{{ predictions|length }}</strong> predictions from MongoDB
+        </span>
+        <span class="stat-badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;">
+            Collection: <code>churn_predictions</code>
+        </span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Customer Profile</th>
+                    <th>Contract & Tier</th>
+                    <th>Activity & Billing</th>
+                    <th>Predicted Outcome</th>
+                    <th>Churn Probability</th>
+                    <th>MongoDB ID</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in predictions %}
+                <tr>
+                    <td style="white-space: nowrap;">
+                        <strong>{{ item.formatted_time or item.timestamp }}</strong>
+                    </td>
+                    <td>
+                        {{ item.customer_features.Age | int }} yrs &bull; {{ item.customer_features.Gender }}<br>
+                        <small style="color: var(--text-muted);">Tenure: {{ item.customer_features.Tenure | int }} mos</small>
+                    </td>
+                    <td>
+                        <span style="font-weight: 600;">{{ item.customer_features['Contract Length'] }}</span><br>
+                        <small style="color: var(--text-muted);">{{ item.customer_features['Subscription Type'] }} Tier</small>
+                    </td>
+                    <td>
+                        ${{ "{:,}".format(item.customer_features['Total Spend'] | int) }} spend<br>
+                        <small style="color: var(--text-muted);">
+                            Delay: {{ item.customer_features['Payment Delay'] | int }}d &bull; Calls: {{ item.customer_features['Support Calls'] | int }}
+                        </small>
+                    </td>
+                    <td>
+                        {% if item.prediction_code == 1 %}
+                            <span class="badge-churn">&#9888; Likely to Churn</span>
+                        {% else %}
+                            <span class="badge-loyal">&#10003; Unlikely to Churn</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong style="color: {% if item.prediction_code == 1 %}#dc2626{% else %}#16a34a{% endif %};">
+                            {{ item.churn_probability }}%
+                        </strong>
+                        <div class="progress-bar-bg" style="height: 6px; width: 80px; margin-top: 0.3rem;">
+                            <div style="height: 100%; width: {{ item.churn_probability }}%; background: {% if item.prediction_code == 1 %}#ef4444{% else %}#10b981{% endif %}; border-radius: 9999px;"></div>
+                        </div>
+                    </td>
+                    <td>
+                        <code style="font-size: 0.75rem; background: var(--bg-page); padding: 0.2rem 0.4rem; border-radius: 4px; border: 1px solid var(--border);">
+                            {{ item._id }}
+                        </code>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card empty-state">
+    <div class="empty-icon">&#128220;</div>
+    <h2 class="empty-title">No Predictions Saved in MongoDB Yet</h2>
+    <p class="empty-desc">
+        Whenever you evaluate customer data on the prediction page, the result, probability, and complete input features will be automatically saved here in the <code>churn_predictions</code> collection.
+    </p>
+    <a href="{{ url_for('predict_page') }}" class="btn btn-primary">
+        &#9654; Make Your First Prediction
+    </a>
+</div>
+{% endif %}
+
+{% endblock %}

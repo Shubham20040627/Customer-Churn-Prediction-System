@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}System Notice{% endblock %}
+
+{% block content %}
+<div class="card empty-state" style="max-width: 650px; margin: 3rem auto;">
+    <div class="empty-icon" style="color: #ef4444;">&#9888;</div>
+    <h1 class="empty-title" style="color: #b91c1c;">{{ error_title or "System Notice" }}</h1>
+    <p class="empty-desc">
+        {{ error_message or "An unexpected issue occurred while processing your request." }}
+    </p>
+
+    {% if error_details %}
+    <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius-sm); padding: 1rem; text-align: left; font-family: monospace; font-size: 0.85rem; color: #991b1b; margin-bottom: 1.5rem; word-break: break-all;">
+        {{ error_details }}
+    </div>
+    {% endif %}
+
+    <div style="background: var(--bg-page); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem; text-align: left; margin-bottom: 1.5rem; font-size: 0.9rem;">
+        <strong style="color: var(--navy-dark); display: block; margin-bottom: 0.5rem;">Troubleshooting Checklist:</strong>
+        <ul style="padding-left: 1.25rem; color: var(--text-muted); line-height: 1.6;">
+            <li>Ensure the MongoDB service is running on <code>localhost:27017</code>.</li>
+            <li>Verify database name is <code>customerChurnDB</code> in MongoDB Compass.</li>
+            <li>If the model is missing, execute <code>python src/train_model.py</code>.</li>
+        </ul>
+    </div>
+
+    <div class="btn-group" style="justify-content: center;">
+        <a href="{{ url_for('index') }}" class="btn btn-primary">
+            &larr; Return to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

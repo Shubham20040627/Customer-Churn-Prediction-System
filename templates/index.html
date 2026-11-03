@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Customer Churn Prediction Dashboard</h1>
+    <p class="page-subtitle">
+        An end-to-end Machine Learning and NoSQL solution integrating MongoDB Community Server, PyMongo, and Scikit-learn Logistic Regression.
+    </p>
+</div>
+
+<!-- Dynamic Statistics Grid -->
+<div class="stats-grid">
+    <!-- Stat 1: Training Records in MongoDB -->
+    <div class="stat-card">
+        <div class="stat-header">
+            <span class="stat-label">Training Records</span>
+            <span class="stat-badge badge-ready">MongoDB</span>
+        </div>
+        <div class="stat-value">{{ "{:,}".format(stats.train_count) }}</div>
+        <div class="stat-desc">Collection: <code>customers_train</code></div>
+    </div>
+
+    <!-- Stat 2: Testing Records in MongoDB -->
+    <div class="stat-card">
+        <div class="stat-header">
+            <span class="stat-label">Testing Records</span>
+            <span class="stat-badge badge-ready">MongoDB</span>
+        </div>
+        <div class="stat-value">{{ "{:,}".format(stats.test_count) }}</div>
+        <div class="stat-desc">Collection: <code>customers_test</code></div>
+    </div>
+
+    <!-- Stat 3: Saved Predictions in MongoDB -->
+    <div class="stat-card">
+        <div class="stat-header">
+            <span class="stat-label">Saved Predictions</span>
+            <span class="stat-badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;">Live DB</span>
+        </div>
+        <div class="stat-value">{{ "{:,}".format(stats.predictions_count) }}</div>
+        <div class="stat-desc">Collection: <code>churn_predictions</code></div>
+    </div>
+
+    <!-- Stat 4: Model Status -->
+    <div class="stat-card">
+        <div class="stat-header">
+            <span class="stat-label">Model Status</span>
+            {% if model_trained %}
+                <span class="stat-badge badge-ready">Trained</span>
+            {% else %}
+                <span class="stat-badge badge-warning">Action Required</span>
+            {% endif %}
+        </div>
+        <div class="stat-value" style="font-size: 1.4rem; padding-top: 0.35rem;">
+            {% if model_trained %}
+                <span style="color: var(--success); display:flex; align-items:center; gap:0.4rem;">
+                    &#x2714; Ready for Inference
+                </span>
+            {% else %}
+                <span style="color: var(--warning);">
+                    &#x26A0; Model Not Trained
+                </span>
+            {% endif %}
+        </div>
+        <div class="stat-desc">
+            {% if model_trained %}
+                Logistic Regression Pipeline loaded
+            {% else %}
+                Run <code>python src/train_model.py</code>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Primary Action Banner -->
+<div class="card" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #ffffff; border: none;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
+        <div>
+            <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 0.4rem;">Ready to Evaluate Customer Churn Risk?</h2>
+            <p style="color: #cbd5e1; max-width: 650px; font-size: 0.95rem;">
+                Enter new customer behavioral details to predict churn likelihood with confidence probabilities, and store the prediction results directly into MongoDB.
+            </p>
+        </div>
+        <div class="btn-group">
+            <a href="{{ url_for('predict_page') }}" class="btn btn-primary" id="btn-start-predict">
+                &#9654; Predict Customer Churn
+            </a>
+            <a href="{{ url_for('history_page') }}" class="btn btn-secondary" id="btn-view-history" style="background: #334155; color: #ffffff; border-color: #475569;">
+                View Prediction History
+            </a>
+            <a href="{{ url_for('evaluation_page') }}" class="btn btn-secondary" id="btn-view-eval" style="background: #334155; color: #ffffff; border-color: #475569;">
+                Model Metrics
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- How the System Works Section -->
+<div class="card">
+    <h2 class="card-title">&#9881; How the System Works</h2>
+    <p class="card-subtitle">
+        A seamless integration connecting NoSQL document storage, machine learning preprocessing pipelines, and a web application interface.
+    </p>
+
+    <div class="workflow-steps">
+        <div class="workflow-step">
+            <div class="step-num">1</div>
+            <div class="step-title">MongoDB Storage</div>
+            <div class="step-desc">
+                Raw training records (<code>customers_train</code>) and testing records (<code>customers_test</code>) are maintained as NoSQL documents in <code>customerChurnDB</code>.
+            </div>
+        </div>
+
+        <div class="workflow-step">
+            <div class="step-num">2</div>
+            <div class="step-title">Data Extraction</div>
+            <div class="step-desc">
+                PyMongo queries the database, projects out internal <code>_id</code> fields, and converts document streams into high-performance Pandas DataFrames.
+            </div>
+        </div>
+
+        <div class="workflow-step">
+            <div class="step-num">3</div>
+            <div class="step-title">Pipeline Preprocessing</div>
+            <div class="step-desc">
+                Scikit-learn <code>ColumnTransformer</code> standardizes numerical features (z-score) and encodes categorical fields (One-Hot), preventing data leakage.
+            </div>
+        </div>
+
+        <div class="workflow-step">
+            <div class="step-num">4</div>
+            <div class="step-title">Logistic Regression</div>
+            <div class="step-desc">
+                The classification model learns optimal decision boundaries, outputting both binary decisions and well-calibrated class probabilities.
+            </div>
+        </div>
+
+        <div class="workflow-step">
+            <div class="step-num">5</div>
+            <div class="step-title">Result Persistence</div>
+            <div class="step-desc">
+                Every prediction generated via the web UI is logged with a UTC timestamp and full input metadata into MongoDB's <code>churn_predictions</code> collection.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dataset & NoSQL Collections Overview -->
+<div class="card">
+    <h2 class="card-title">&#128196; MongoDB Collections & Schema Reference</h2>
+    <p class="card-subtitle">
+        Overview of the active NoSQL database structure utilized in this project.
+    </p>
+
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Collection Name</th>
+                    <th>Role in Project</th>
+                    <th>Primary Key / Identifier</th>
+                    <th>Records Count</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>customers_train</code></td>
+                    <td>Model training & validation split</td>
+                    <td><code>CustomerID</code>, <code>_id</code></td>
+                    <td><strong>{{ "{:,}".format(stats.train_count) }}</strong> docs</td>
+                    <td><span class="stat-badge badge-ready">&#10003; Loaded in MongoDB</span></td>
+                </tr>
+                <tr>
+                    <td><code>customers_test</code></td>
+                    <td>Independent evaluation dataset</td>
+                    <td><code>CustomerID</code>, <code>_id</code></td>
+                    <td><strong>{{ "{:,}".format(stats.test_count) }}</strong> docs</td>
+                    <td><span class="stat-badge badge-ready">&#10003; Loaded in MongoDB</span></td>
+                </tr>
+                <tr>
+                    <td><code>churn_predictions</code></td>
+                    <td>Real-time prediction audit logs</td>
+                    <td>Generated <code>_id</code> (ObjectId)</td>
+                    <td><strong>{{ "{:,}".format(stats.predictions_count) }}</strong> docs</td>
+                    <td><span class="stat-badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;">Live Insert</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
