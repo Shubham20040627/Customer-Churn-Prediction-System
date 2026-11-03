@@ -41,6 +41,9 @@ ENV/
 # Environment variables
 .env
 
+# Word documents
+*.docx
+
 # System files
 Thumbs.db
 Desktop.ini
